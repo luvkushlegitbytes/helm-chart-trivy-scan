@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Check out the repository
+    # 1. Checkout the repository to the runner
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    # 2. Set up Helm
+    # 2. Set up Helm (Helm is required for working with Helm charts)
     - name: Set up Helm
       uses: azure/setup-helm@v1
 
@@ -29,26 +29,34 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.35.0_Linux-64bit.deb
 
-    # 4. Debugging step to list all files
+    # 4. Cache Trivy DB to avoid repeated downloads (works if the path is ~/.cache/trivy)
+    - name: Cache Trivy DB
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/trivy
+        key: trivy-db-${{ runner.os }}-${{ hashFiles('**/values.yaml') }}
+        restore-keys: |
+          trivy-db-${{ runner.os }}-
+
+    # 5. List files for debugging (check where values.yaml is located)
     - name: List repository files for debugging
       run: |
         ls -R
 
-    # 5. Extract image information from the Helm values.yaml
+    # 6. Extract the image repository and tag from values.yaml
     - name: Extract image from values.yaml
       id: extract_image
       run: |
-        # Update the path to your values.yaml file if necessary
+        # Set the correct path to your values.yaml file
         IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' charts/uptime-kuma/values.yaml)
         IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' charts/uptime-kuma/values.yaml)
-        
-        # Set the extracted image information as environment variables for the next steps
+
+        # Set extracted image information as environment variables for future steps
         echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
-        
         echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
 
-    # 6. Scan the extracted image using Trivy
+    # 7. Scan the extracted image with Trivy
     - name: Scan image with Trivy
       run: |
-        # Scan the extracted image for vulnerabilities
+        # Scan the image with Trivy for vulnerabilities
         trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${{ env.IMAGE }}
