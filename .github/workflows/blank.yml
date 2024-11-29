@@ -1,0 +1,52 @@
+name: Helm Image Vulnerability Scan
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to main branch, adjust as necessary
+  pull_request:
+    branches:
+      - main  # Trigger on PR to main branch, adjust as necessary
+
+jobs:
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Check out the repository
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    # 2. Set up Helm
+    - name: Set up Helm
+      uses: azure/setup-helm@v1
+
+    # 3. Install Trivy
+    - name: Install Trivy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.35.0_Linux-64bit.deb
+
+    # 4. Search for Helm chart image definitions
+    - name: Extract images from Helm charts
+      id: extract_images
+      run: |
+        # Find all the Helm charts (usually under the 'charts' or 'helm' directory)
+        helm_chart_files=$(find . -type f -name 'values.yaml' -exec grep -H 'image:' {} \;)
+        echo "Found Helm chart images:"
+        echo "$helm_chart_files"
+
+        # Extract image URLs (assuming the format is 'image: <url>')
+        image_urls=$(echo "$helm_chart_files" | grep -oP 'image:\s+\K\S+')
+        echo "image_urls=$image_urls" >> $GITHUB_ENV
+
+    # 5. Scan images with Trivy
+    - name: Scan images with Trivy
+      run: |
+        # Scan each extracted image for vulnerabilities using Trivy
+        for image in ${{ env.image_urls }}; do
+          echo "Scanning image: $image"
+          trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress "$image"
+        done
