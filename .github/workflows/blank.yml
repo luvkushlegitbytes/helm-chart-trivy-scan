@@ -29,20 +29,25 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.35.0_Linux-64bit.deb
 
-    # 4. Extract image information from the Helm values.yaml
+    # 4. Debugging step to list all files
+    - name: List repository files for debugging
+      run: |
+        ls -R
+
+    # 5. Extract image information from the Helm values.yaml
     - name: Extract image from values.yaml
       id: extract_image
       run: |
-        # Extract the image repository and tag from the values.yaml
-        IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' values.yaml)
-        IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' values.yaml)
+        # Update the path to your values.yaml file if necessary
+        IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' charts/uptime-kuma/values.yaml)
+        IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' charts/uptime-kuma/values.yaml)
         
         # Set the extracted image information as environment variables for the next steps
         echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
         
         echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
 
-    # 5. Scan the extracted image using Trivy
+    # 6. Scan the extracted image using Trivy
     - name: Scan image with Trivy
       run: |
         # Scan the extracted image for vulnerabilities
