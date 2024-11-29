@@ -34,7 +34,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/trivy
-        key: trivy-db-${{ runner.os }}-${{ hashFiles('**/values.yaml') }}
+        key: trivy-db-${{ runner.os }}-${{ hashFiles('**/*.yaml', '**/*.yml') }}
         restore-keys: |
           trivy-db-${{ runner.os }}-
 
@@ -47,10 +47,14 @@ jobs:
     - name: Extract image from values.yaml
       id: extract_image
       run: |
-        IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' charts/uptime-kuma/values.yaml)
-        IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' charts/uptime-kuma/values.yaml)
+        IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' charts/uptime-kuma/values.yaml || echo "not_found")
+        IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' charts/uptime-kuma/values.yaml || echo "latest")
 
-        # Set extracted image info as environment variables
+        # Check if the image was found and log
+        if [[ "$IMAGE_REPO" == "not_found" ]]; then
+          echo "Error: IMAGE_REPO not found in values.yaml"
+          exit 1
+        fi
         echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
         echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
 
@@ -58,4 +62,10 @@ jobs:
     - name: Scan image with Trivy
       run: |
         # Scan the image with Trivy for vulnerabilities
+        echo "Scanning image ${IMAGE} for vulnerabilities..."
         trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${{ env.IMAGE }}
+        
+    # 8. Optionally: Show results (useful for debugging)
+    - name: Display Trivy Scan Results
+      run: |
+        echo "Trivy scan completed for image ${IMAGE}."
