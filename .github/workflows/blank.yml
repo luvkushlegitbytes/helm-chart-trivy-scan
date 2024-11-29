@@ -90,5 +90,5 @@ jobs:
     # 12. Run the Python script to convert JSON to Excel
     - name: Convert JSON to Excel
       run: |
-        python your-python-script.py  # Replace 'your-python-script.py' with the actual filename
+        python helm-chart-trivy-scan/your-python-script.py  # Replace 'your-python-script.py' with the actual filename
 
