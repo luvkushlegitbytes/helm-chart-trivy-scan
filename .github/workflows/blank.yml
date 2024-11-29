@@ -64,12 +64,12 @@ jobs:
         echo "IMAGE_REPO: $IMAGE_REPO"
         echo "IMAGE_TAG: $IMAGE_TAG"
 
-    # 8. Scan image with Trivy
+    # 8. Scan image with Trivy and save results as JSON
     - name: Scan image with Trivy
       run: |
         echo "Scanning image ${IMAGE} for vulnerabilities..."
-        trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress ${{ env.IMAGE }} || echo "Vulnerabilities found, but workflow will continue"
-        
+        trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress --format json --output trivy-scan-results.json ${{ env.IMAGE }} || echo "Vulnerabilities found, but workflow will continue"
+
     # 9. Optionally: Display Trivy scan results
     - name: Display Trivy Scan Results
       run: |
@@ -90,4 +90,4 @@ jobs:
     # 12. Run the Python script to convert JSON to Excel
     - name: Convert JSON to Excel
       run: |
-        python json_to_excel.py  # Update with the correct path to your script if needed
+        python json_to_excel.py  # This assumes json_to_excel.py is in the root of the repository
