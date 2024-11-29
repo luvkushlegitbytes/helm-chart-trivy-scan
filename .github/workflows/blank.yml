@@ -79,7 +79,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'  # You can specify another Python version if needed
+        python-version: '3.9'
 
     # 11. Install dependencies (pandas and openpyxl)
     - name: Install dependencies
@@ -90,5 +90,4 @@ jobs:
     # 12. Run the Python script to convert JSON to Excel
     - name: Convert JSON to Excel
       run: |
-        python helm-chart-trivy-scan/your-python-script.py  # Replace 'your-python-script.py' with the actual filename
-
+        python json_to_excel.py  # Update with the correct path to your script if needed
