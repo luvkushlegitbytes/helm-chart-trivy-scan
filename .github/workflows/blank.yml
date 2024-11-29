@@ -29,24 +29,21 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.35.0_Linux-64bit.deb
 
-    # 4. Search for Helm chart image definitions
-    - name: Extract images from Helm charts
-      id: extract_images
+    # 4. Extract image information from the Helm values.yaml
+    - name: Extract image from values.yaml
+      id: extract_image
       run: |
-        # Find all the Helm charts (usually under the 'charts' or 'helm' directory)
-        helm_chart_files=$(find . -type f -name 'values.yaml' -exec grep -H 'image:' {} \;)
-        echo "Found Helm chart images:"
-        echo "$helm_chart_files"
+        # Extract the image repository and tag from the values.yaml
+        IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' values.yaml)
+        IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' values.yaml)
+        
+        # Set the extracted image information as environment variables for the next steps
+        echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
+        
+        echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
 
-        # Extract image URLs (assuming the format is 'image: <url>')
-        image_urls=$(echo "$helm_chart_files" | grep -oP 'image:\s+\K\S+')
-        echo "image_urls=$image_urls" >> $GITHUB_ENV
-
-    # 5. Scan images with Trivy
-    - name: Scan images with Trivy
+    # 5. Scan the extracted image using Trivy
+    - name: Scan image with Trivy
       run: |
-        # Scan each extracted image for vulnerabilities using Trivy
-        for image in ${{ env.image_urls }}; do
-          echo "Scanning image: $image"
-          trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress "$image"
-        done
+        # Scan the extracted image for vulnerabilities
+        trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${{ env.IMAGE }}
