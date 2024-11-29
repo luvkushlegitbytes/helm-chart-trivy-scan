@@ -54,7 +54,6 @@ jobs:
           echo "Error: IMAGE_REPO not found in values.yaml"
           exit 1
         fi
-
         echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
         echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
 
@@ -68,26 +67,23 @@ jobs:
     - name: Scan image with Trivy
       run: |
         echo "Scanning image ${IMAGE} for vulnerabilities..."
-        trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress --format json --output trivy-scan-results.json ${{ env.IMAGE }} || echo "Vulnerabilities found, but workflow will continue"
+        trivy image --severity HIGH,CRITICAL --format json --output trivy-scan-results.json ${{ env.IMAGE }} || echo "Vulnerabilities found, but workflow will continue"
 
     # 9. Optionally: Display Trivy scan results
     - name: Display Trivy Scan Results
       run: |
         echo "Trivy scan completed for image ${IMAGE}."
 
-    # 10. Set up Python environment
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    # 10. Upload the scan results file as an artifact (optional)
+    - name: Upload Trivy Scan Results
+      uses: actions/upload-artifact@v3
       with:
-        python-version: '3.9'
+        name: trivy-scan-results
+        path: trivy-scan-results.json
 
-    # 11. Install dependencies (pandas and openpyxl)
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pandas openpyxl
-
-    # 12. Run the Python script to convert JSON to Excel
-    - name: Convert JSON to Excel
-      run: |
-        python json_to_excel.py  # This assumes json_to_excel.py is in the root of the repository
+    # 11. Download the Trivy scan results artifact if needed (can be used in another job)
+    - name: Download Trivy Scan Results
+      uses: actions/download-artifact@v3
+      with:
+        name: trivy-scan-results
+        path: ./ # Downloads the artifact to the current directory
