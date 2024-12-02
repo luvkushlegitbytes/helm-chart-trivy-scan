@@ -91,12 +91,12 @@ jobs:
         path: trivy-scan-results.xlsx  # Path to the generated Excel file
 
     # 14. Upload the Excel file to S3
-    - name: Upload Excel file to S3
+    - name: Upload Excel to S3
       uses: jakejarvis/s3-sync-action@v0.5.0
       with:
-        source_dir: ./trivy-scan-results.xlsx
-        destination_bucket: ${{ secrets.S3_BUCKET_NAME }}
-        destination_key: "trivy-scan-results/${GITHUB_RUN_ID}/trivy-scan-results.xlsx"
+        source_dir: ./trivy-scan-results.xlsx  # Path to the Excel file
+        destination_bucket: ${{ secrets.S3_BUCKET_NAME }}  # S3 bucket name
+        destination_key: trivy-scan-results.xlsx  # The key (path) in S3 where you want to upload
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
