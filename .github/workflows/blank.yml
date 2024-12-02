@@ -1,17 +1,26 @@
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-  --data '{
-    "fields": {
-      "project": {
-        "key": "YOUR_PROJECT_KEY"
-      },
-      "summary": "Vulnerabilities in ${{ env.IMAGE }}",
-      "description": "'"$ISSUE_BODY"'",
-      "issuetype": {
-        "name": "Bug"
-      }
-    }
-  }' \
-  $JIRA_URL/rest/api/2/issue/ \
-  --verbose
+- name: Create Jira Issue
+  env:
+    JIRA_URL: ${{ secrets.JIRA_URL }}
+    JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+    JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+    ISSUE_BODY: |
+      Vulnerabilities detected in the image: ${{ env.IMAGE }}
+      Refer to the attached scan results for details.
+  run: |
+    curl -X POST \
+      -H "Content-Type: application/json" \
+      -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+      --data '{
+        "fields": {
+          "project": {
+            "key": "YOUR_PROJECT_KEY"
+          },
+          "summary": "Vulnerabilities in ${{ env.IMAGE }}",
+          "description": "'"${ISSUE_BODY}"'",
+          "issuetype": {
+            "name": "Bug"
+          }
+        }
+      }' \
+      $JIRA_URL/rest/api/2/issue/ \
+      --verbose
