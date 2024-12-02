@@ -1,27 +1,52 @@
-- name: Create Jira Issue
-  run: |
-    curl -X POST \
-      -H "Content-Type: application/json" \
-      -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-      --data "$(cat <<EOF
-    {
-      "fields": {
-        "project": {
-          "key": "YOUR_PROJECT_KEY"
-        },
-        "summary": "Vulnerabilities in ${IMAGE}",
-        "description": "${ISSUE_BODY}",
-        "issuetype": {
-          "name": "Bug"
-        }
-      }
-    }
-    EOF
-    )" \
-    $JIRA_URL/rest/api/2/issue/ --verbose
-  env:
-    JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-    JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-    JIRA_URL: ${{ secrets.JIRA_URL }}
-    IMAGE: ${{ secrets.IMAGE }}
-    ISSUE_BODY: ${{ secrets.ISSUE_BODY }}
+name: Jira Issue Creation for Vulnerabilities
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas openpyxl
+
+      - name: Create Jira Issue
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            --data '{
+              "fields": {
+                "project": {
+                  "key": "PROJECT_KEY"
+                },
+                "summary": "Vulnerabilities found in image ${IMAGE}",
+                "description": "${ISSUE_BODY}",
+                "issuetype": {
+                  "name": "Bug"
+                }
+              }
+            }' \
+            $JIRA_URL/rest/api/2/issue/
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          IMAGE: ${{ secrets.IMAGE }}
+          ISSUE_BODY: ${{ secrets.ISSUE_BODY }}
