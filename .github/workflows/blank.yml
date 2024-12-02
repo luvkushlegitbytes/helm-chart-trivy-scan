@@ -120,7 +120,7 @@ jobs:
         )
         
         # Print the payload for debugging (optional)
-        echo "$JIRA_PAYLOAD"
+        echo "Jira Payload: $JIRA_PAYLOAD"
         
         # Send the request
         curl -X POST \
