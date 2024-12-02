@@ -228,6 +228,6 @@ jobs:
 
           }' \
 
-          $JIRA_URL/rest/api/2/issue/
+      
 
  
