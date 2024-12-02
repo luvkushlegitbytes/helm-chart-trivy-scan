@@ -1,40 +1,20 @@
-name: Create Jira Issue  # Optional: Gives a name to the workflow
-on:                     # Required: Specifies when to trigger the workflow
-  push:
-    branches:
-      - main
-
-jobs:                   # Required: Defines the jobs to run
-  create-jira-issue:    # Job name
-    runs-on: ubuntu-latest
-
-    steps:              # Steps within the job
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
-    - name: Create Jira Issue
-      env:
-        JIRA_URL: ${{ secrets.JIRA_URL }}
-        JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        ISSUE_BODY: |
-          Vulnerabilities detected in the image.
-          Refer to the scan results for details.
-      run: |
-        curl -X POST \
-          -H "Content-Type: application/json" \
-          -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-          --data '{
-            "fields": {
-              "project": {
-                "key": "YOUR_PROJECT_KEY"
-              },
-              "summary": "Vulnerabilities detected",
-              "description": "'"${ISSUE_BODY}"'",
-              "issuetype": {
-                "name": "Bug"
-              }
-            }
-          }' \
-          $JIRA_URL/rest/api/2/issue/ \
-          --verbose
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+  --data "$(cat <<EOF
+{
+  "fields": {
+    "project": {
+      "key": "YOUR_PROJECT_KEY"
+    },
+    "summary": "Vulnerabilities in ${IMAGE}",
+    "description": "${ISSUE_BODY}",
+    "issuetype": {
+      "name": "Bug"
+    }
+  }
+}
+EOF
+)" \
+  $JIRA_URL/rest/api/2/issue/ \
+  --verbose
