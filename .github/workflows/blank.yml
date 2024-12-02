@@ -102,6 +102,8 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
+        ACTIONS_STEP_DEBUG: true
+
 
 
     # 15. Create Jira Issue for vulnerabilities found
