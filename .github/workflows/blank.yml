@@ -34,7 +34,7 @@ jobs:
             --data '{
               "fields": {
                 "project": {
-                  "key": "PROJECT_KEY"
+                  "key": "TVT"
                 },
                 "summary": "Vulnerabilities found in image ${IMAGE}",
                 "description": "${ISSUE_BODY}",
