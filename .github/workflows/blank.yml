@@ -99,7 +99,7 @@ jobs:
         path: trivy-scan-results.xlsx  # Path to the generated Excel file
 
     # 14. Create Jira Issue for vulnerabilities found
-    # 14. Create Jira Issue for vulnerabilities found
+   
     - name: Create Jira Issue for Vulnerabilities
       run: |
         IMAGE="${{ env.IMAGE }}"
@@ -107,7 +107,7 @@ jobs:
         {
           "fields": {
             "project": {
-              "key": "TVT"  # Replace this with your Jira project key
+              "key": "TVT"
             },
             "summary": "Vulnerabilities found in image ${IMAGE}",
             "description": "Vulnerabilities found during the scan of the image ${IMAGE}. Please refer to the attached Excel for detailed results.",
@@ -120,7 +120,7 @@ jobs:
         )
         
         # Print the payload for debugging (optional)
-        echo "Jira Payload: $JIRA_PAYLOAD"
+        echo "$JIRA_PAYLOAD"
         
         # Send the request
         curl -X POST \
