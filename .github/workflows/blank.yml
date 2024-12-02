@@ -1,20 +1,43 @@
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-  --data "$(cat <<EOF
-{
-  "fields": {
-    "project": {
-      "key": "YOUR_PROJECT_KEY"
-    },
-    "summary": "Vulnerabilities in ${IMAGE}",
-    "description": "${ISSUE_BODY}",
-    "issuetype": {
-      "name": "Bug"
-    }
-  }
-}
-EOF
-)" \
-  $JIRA_URL/rest/api/2/issue/ \
-  --verbose
+name: Jira Issue Creation Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  create-jira-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Create Jira Issue
+      run: |
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+          --data "$(cat <<EOF
+        {
+          "fields": {
+            "project": {
+              "key": "YOUR_PROJECT_KEY"
+            },
+            "summary": "Vulnerabilities in ${IMAGE}",
+            "description": "${ISSUE_BODY}",
+            "issuetype": {
+              "name": "Bug"
+            }
+          }
+        }
+        EOF
+        )" \
+        $JIRA_URL/rest/api/2/issue/ --verbose
+      env:
+        JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        JIRA_URL: $
