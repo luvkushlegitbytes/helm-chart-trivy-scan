@@ -98,9 +98,11 @@ jobs:
         destination_bucket: ${{ secrets.S3_BUCKET_NAME }}  # S3 bucket name
         destination_key: trivy-scan-results.xlsx  # The key (path) in S3 where you want to upload
       env:
+        AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
+
 
     # 15. Create Jira Issue for vulnerabilities found
     - name: Create Jira Issue for Vulnerabilities
