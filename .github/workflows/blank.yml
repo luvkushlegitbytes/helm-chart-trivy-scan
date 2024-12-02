@@ -90,23 +90,7 @@ jobs:
         name: trivy-scan-results-excel
         path: trivy-scan-results.xlsx  # Path to the generated Excel file
 
-    # 14. Upload the Excel file to S3
-    - name: Upload Excel to S3
-      uses: jakejarvis/s3-sync-action@v0.5.0
-      with:
-        source_dir: ./trivy-scan-results.xlsx  # Path to the Excel file
-        destination_bucket: ${{ secrets.S3_BUCKET_NAME }}  # S3 bucket name
-        destination_key: trivy-scan-results.xlsx  # The key (path) in S3 where you want to upload
-      env:
-        AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        ACTIONS_STEP_DEBUG: true
-
-
-
-    # 15. Create Jira Issue for vulnerabilities found
+    # 14. Create Jira Issue for vulnerabilities found
     - name: Create Jira Issue for Vulnerabilities
       run: |
         IMAGE="${{ env.IMAGE }}"
@@ -126,22 +110,22 @@ jobs:
         EOF
         )
         
-        # Create the Jira issue
+        # Create the Jira issue first
         RESPONSE=$(curl -X POST \
           -H "Content-Type: application/json" \
           -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
           --data "$JIRA_PAYLOAD" \
           $JIRA_URL/rest/api/2/issue/)
-        
-        # Extract issue key from the response (this is a simple regex approach)
-        ISSUE_KEY=$(echo "$RESPONSE" | grep -oP '"key": "\K[^"]+')
 
-        # Upload the file to Jira
+        ISSUE_KEY=$(echo "$RESPONSE" | jq -r '.key')
+
+        # Upload the Excel file as an attachment to the created Jira issue
         curl -X POST \
           -H "X-Atlassian-Token: no-check" \
-          -F "file=@./trivy-scan-results.xlsx" \
-          $JIRA_URL/rest/api/2/issue/$ISSUE_KEY/attachments \
-          -u "$JIRA_EMAIL:$JIRA_API_TOKEN"
+          -F "file=@trivy-scan-results.xlsx" \
+          -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+          $JIRA_URL/rest/api/2/issue/$ISSUE_KEY/attachments
+
       env:
         JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
         JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
