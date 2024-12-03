@@ -28,6 +28,7 @@ jobs:
         sudo apt-get install -y wget
         wget https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.35.0_Linux-64bit.deb
+
     # 4. Cache Trivy DB
     - name: Cache Trivy DB
       uses: actions/cache@v2
@@ -36,6 +37,7 @@ jobs:
         key: trivy-db-${{ runner.os }}-${{ hashFiles('**/*.yaml', '**/*.yml') }}
         restore-keys: |
           trivy-db-${{ runner.os }}-
+
     # 5. List files for debugging
     - name: List repository files
       run: ls -R
@@ -47,50 +49,67 @@ jobs:
         IMAGE_REPO=$(grep -oP 'repository:\s*\K\S+' charts/uptime-kuma/values.yaml || echo "not_found")
         IMAGE_TAG=$(grep -oP 'tag:\s*\K\S+' charts/uptime-kuma/values.yaml || echo "latest")
         
-        # Check if extraction was successful
         if [[ "$IMAGE_REPO" == "not_found" ]]; then
           echo "Error: IMAGE_REPO not found in values.yaml"
           exit 1
         fi
         echo "IMAGE=${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_ENV
         echo "Extracted Image: ${IMAGE_REPO}:${IMAGE_TAG}"
+
     # 7. Debug extracted image
     - name: Debug extracted image values
       run: |
         echo "IMAGE_REPO: $IMAGE_REPO"
         echo "IMAGE_TAG: $IMAGE_TAG"
+
     # 8. Scan image with Trivy and save results as JSON
     - name: Scan image with Trivy
       run: |
         echo "Scanning image ${IMAGE} for vulnerabilities..."
         trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress --format json --output trivy-scan-results.json ${{ env.IMAGE }} || echo "Vulnerabilities found, but workflow will continue"
-    # 9. Optionally: Display Trivy scan results
-    - name: Display Trivy Scan Results
+
+    # 9. Display Trivy JSON scan results for debugging
+    - name: Display Trivy JSON Scan Results
       run: |
-        echo "Trivy scan completed for image ${IMAGE}."
-    # 10. Set up Python environment
+        cat trivy-scan-results.json
+
+    # 10. Check if JSON file exists and is non-empty
+    - name: Check if JSON file exists and is non-empty
+      run: |
+        if [ ! -f trivy-scan-results.json ]; then
+          echo "Error: trivy-scan-results.json not found!"
+          exit 1
+        fi
+        if [ ! -s trivy-scan-results.json ]; then
+          echo "Error: trivy-scan-results.json is empty!"
+          exit 1
+        fi
+
+    # 11. Set up Python environment
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
 
-    # 11. Install dependencies (pandas and openpyxl)
+    # 12. Install dependencies (pandas and openpyxl)
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas openpyxl
-    # 12. Run the Python script to convert JSON to Excel
+
+    # 13. Run the Python script to convert JSON to Excel
     - name: Convert JSON to Excel
       run: |
-        python json_to_excel.py  # This assumes json_to_excel.py is in the root of the repository
-    # 13. Upload the Excel file as an artifact
+        python json_to_excel.py  # Assuming the script is present
+
+    # 14. Upload the Excel file as an artifact
     - name: Upload Excel Scan Results
       uses: actions/upload-artifact@v3
       with:
         name: trivy-scan-results-excel
         path: trivy-scan-results.xlsx  # Path to the generated Excel file
 
-    # 14. Create Jira Issue for vulnerabilities found
+    # 15. Create Jira Issue for vulnerabilities found
     - name: Create Jira Issue for Vulnerabilities
       run: |
         IMAGE="${{ env.IMAGE }}"
@@ -125,7 +144,6 @@ jobs:
           -F "file=@trivy-scan-results.xlsx" \
           -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
           $JIRA_URL/rest/api/2/issue/$ISSUE_KEY/attachments
-
       env:
         JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
         JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
